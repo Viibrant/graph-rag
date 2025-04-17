@@ -1,0 +1,12 @@
+{
+    "typeCheckingMode": "basic",
+    "include": [
+        "backend/src"
+    ],
+    "exclude": [
+        "tests",
+        "**/__pycache__"
+    ],
+    "reportMissingImports": true,
+    "reportMissingTypeStubs": false
+}
