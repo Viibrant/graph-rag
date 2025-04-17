@@ -1,16 +1,15 @@
 from typing import Generator
-from src.models import IngestEvent
+from src.models import IngestEvent, Paper
 from src.arxiv import fetch_papers
 from src.embedder import embed_papers
-from src.vector_store import index_papers, search_faiss
-from src.graph_store import update_graph, get_related_papers
+from src.store import get_vector_store, VectorStore
 
 
 def run_pipeline(query: str) -> Generator[IngestEvent, None, None]:
     """
     Runs the entire pipeline for processing papers.
     This function orchestrates the fetching of papers from ArXiv,
-    embedding them, indexing in FAISS, updating the graph,
+    embedding them, upserting to Qdrant, updating the graph,
     and performing semantic search.
 
     Args:
@@ -25,15 +24,16 @@ def run_pipeline(query: str) -> Generator[IngestEvent, None, None]:
     yield IngestEvent(
         type="step", step="fetching_arxiv", message=f"Searching ArXiv for '{query}'"
     )
-    papers = fetch_papers(query)
+    papers: list[Paper] = fetch_papers(query)
 
     # Embed papers
     yield IngestEvent(type="step", step="embedding", message="Embedding papers")
     embeddings = embed_papers(papers)
 
-    # Index papers in FAISS
-    yield IngestEvent(type="step", step="vector_index", message="Indexing in FAISS")
-    index_papers(papers, embeddings)
+    # Upsert to Qdrant
+    yield IngestEvent(type="step", step="vector_index", message="Upserting to Qdrant")
+    vector_store: VectorStore = get_vector_store()
+    vector_store.index(papers=papers, vectors=embeddings)
 
     # Update graph
     yield IngestEvent(type="step", step="graph_index", message="Updating graph")
@@ -51,5 +51,5 @@ def run_pipeline(query: str) -> Generator[IngestEvent, None, None]:
     )
     enriched = get_related_papers(top)
 
-    # Return enriched papers    
+    # Return enriched papers
     yield IngestEvent(type="result", data=enriched)

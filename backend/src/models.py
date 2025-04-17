@@ -23,6 +23,7 @@ class IngestEvent(BaseModel):
         paper_id (str): The ID of the paper being processed.
         data (Any): Additional data related to the event.
     """
+
     type: IngestEventType | None = Field(
         default=None,
         description="Type of the event (e.g., step, progress, warning, error, result)",
@@ -46,7 +47,7 @@ class IngestEvent(BaseModel):
     data: Any = Field(
         default=None,
         description="Additional data related to the event",
-    ) 
+    )
 
 
 class Paper(BaseModel):
@@ -54,3 +55,17 @@ class Paper(BaseModel):
     title: str
     abstract: str
     authors: list[str]
+
+
+class SearchResult(BaseModel):
+    id: str
+    title: str
+    authors: list[str]
+    score: float | None = Field(
+        default=None,
+        description="Score of the search result",
+    )
+    related_ids: list[str] | None = Field(
+        default=None,
+        description="List of related paper IDs",
+    )
