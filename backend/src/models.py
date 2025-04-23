@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field
-from typing import Any
 from enum import Enum
+from typing import Any
+
+from pydantic import BaseModel, Field
 
 
 class IngestEventType(str, Enum):
@@ -55,6 +56,30 @@ class Paper(BaseModel):
     title: str
     abstract: str
     authors: list[str]
+
+
+class PaperStatus(str, Enum):
+    QUEUED = "queued"
+    EMBEDDED = "embedded"
+    SEEN = "seen"
+    ERROR = "error"
+
+
+class PaperState(BaseModel):
+    id: str
+    status: PaperStatus
+    in_graph: bool = Field(
+        default=False,
+        description="Whether the paper is in the graph",
+    )
+    last_seen: str | None = Field(
+        default=None,
+        description="Timestamp of the last time the paper was seen",
+    )
+    error_message: str | None = Field(
+        default=None,
+        description="Error message if the paper failed to process",
+    )
 
 
 class SearchResult(BaseModel):
