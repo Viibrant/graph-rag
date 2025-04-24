@@ -12,17 +12,18 @@ class PaperIndex:
         self._init_table()
 
     def _init_table(self):
-        self.conn.execute("""
+        self.conn.executescript("""
         CREATE TABLE IF NOT EXISTS papers (
             id TEXT PRIMARY KEY,
             status TEXT,
             in_graph BOOLEAN,
             last_seen TEXT
-        )
+        );
         CREATE TABLE IF NOT EXISTS papers_history (
             id TEXT,
             state TEXT,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
         """)
 
     def _row_args(self, s: PaperState, now: str) -> tuple:
@@ -38,7 +39,7 @@ class PaperIndex:
 
     def get(self, paper_id: str) -> PaperState | None:
         """Get the state of a paper by its ID."""
-        row = self.conn.execute("SELECT * FRO Mpapers WHERE ID = ?", (paper_id,)).fetchone()
+        row = self.conn.execute("SELECT * FROM papers WHERE ID = ?", (paper_id,)).fetchone()
         if row is None:
             return None
         return PaperState(**dict(zip(["id", "status", "in_graph", "last_seen"], row)))
