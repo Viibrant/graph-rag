@@ -7,11 +7,19 @@ from src.models import PaperState
 
 
 class PaperIndex:
+    """
+    A class to manage the paper index database.
+
+    The paper index database tells us whether a paper has been seen before,
+    whether it is in the graph, and its status.
+    It also keeps a history of the paper states.
+    """
+
     def __init__(self, db_path: Path = PAPER_INDEX_PATH):
         self.conn = sqlite3.connect(db_path)
         self._init_table()
 
-    def _init_table(self):
+    def _init_table(self) -> None:
         self.conn.executescript("""
         CREATE TABLE IF NOT EXISTS papers (
             id TEXT PRIMARY KEY,
@@ -26,7 +34,7 @@ class PaperIndex:
         );
         """)
 
-    def _row_args(self, s: PaperState, now: str) -> tuple:
+    def _row_args(self, s: PaperState, now: str) -> tuple[str, str, bool, str, str, bool, str]:
         return (
             s.id,
             s.status,
@@ -44,7 +52,7 @@ class PaperIndex:
             return None
         return PaperState(**dict(zip(["id", "status", "in_graph", "last_seen"], row)))
 
-    def set(self, paper_state: PaperState):
+    def set(self, paper_state: PaperState) -> None:
         """Set the state of a paper."""
         now = paper_state.last_seen or datetime.now().isoformat()
 
@@ -67,7 +75,7 @@ class PaperIndex:
 
         self.conn.commit()
 
-    def set_many(self, states: list[PaperState]):
+    def set_many(self, states: list[PaperState]) -> None:
         """Set the state of multiple papers."""
         now = datetime.now().isoformat()
 

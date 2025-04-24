@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class IngestEventType(str, Enum):
@@ -95,3 +95,4 @@ class SearchResult(BaseModel):
         default=None,
         description="List of related paper IDs",
     )
+    model_config = ConfigDict(coerce_numbers_to_str=True)

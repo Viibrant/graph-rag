@@ -1,14 +1,15 @@
 from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 
 from fastapi import FastAPI
+from loguru import logger
 
 from src.api import router
 from src.store import health_check
-from loguru import logger
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Health check
     logger.info("Performing health check...")
     health: bool = health_check()

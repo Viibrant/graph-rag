@@ -8,7 +8,7 @@ QUEUE_LIST = "paper_queue"
 QUEUE_SET = "paper_queue_ids"
 
 
-def enqueue_missing(papers: list[Paper], redis_conn: Redis):
+def enqueue_missing(papers: list[Paper], redis_conn: Redis) -> None:
     """
     Enqueue papers that are missing from the queue.
 
