@@ -1,5 +1,6 @@
-from src.pipeline import run_pipeline
 from loguru import logger
+
+from src.pipeline import run_pipeline
 
 
 def main():
