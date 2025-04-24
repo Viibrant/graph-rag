@@ -53,6 +53,7 @@ class IngestEvent(BaseModel):
 
 class Paper(BaseModel):
     id: str
+    url: str
     title: str
     abstract: str
     authors: list[str]
