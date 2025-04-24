@@ -1,6 +1,7 @@
-from sentence_transformers import SentenceTransformer
-from numpy.typing import NDArray
 import numpy as np
+from numpy.typing import NDArray
+from sentence_transformers import SentenceTransformer
+
 from src.models import Paper
 
 _model: SentenceTransformer | None = None

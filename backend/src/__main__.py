@@ -3,7 +3,7 @@ from loguru import logger
 from src.pipeline import run_pipeline
 
 
-def main():
+def main() -> None:
     """Entry point for the pipeline."""
     logger.info("Starting pipeline")
     query = "machine learning"

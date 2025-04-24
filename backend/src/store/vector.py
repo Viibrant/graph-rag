@@ -5,12 +5,8 @@ import numpy as np
 from dotenv import load_dotenv
 from numpy.typing import NDArray
 from qdrant_client import QdrantClient
-from qdrant_client.http.models import (
-    Distance,
-    PointStruct,
-    ScoredPoint,
-    VectorParams,
-)
+from qdrant_client.http.models import Distance, PointStruct, ScoredPoint, VectorParams
+
 from src.models import Paper, SearchResult
 
 load_dotenv()
@@ -25,9 +21,7 @@ port = int(os.getenv("QDRANT_PORT", 6333))
 class VectorStore(Protocol):
     def index(self, papers: list[Paper], vectors: NDArray[np.float32]) -> None: ...
 
-    def search(
-        self, query_vector: NDArray[np.float32], top_k: int = 5
-    ) -> list[SearchResult]: ...
+    def search(self, query_vector: NDArray[np.float32], top_k: int = 5) -> list[SearchResult]: ...
 
     def is_healthy(self) -> bool: ...
 
@@ -36,7 +30,7 @@ class QdrantVectorStore(VectorStore):
     def __init__(self, host: str = host, port: int = port):
         self.client = QdrantClient(host=host, port=port)
 
-    def ensure_collection(self):
+    def ensure_collection(self) -> None:
         """
         Ensure the collection exists. If it doesn't, create it.
         """
@@ -61,7 +55,7 @@ class QdrantVectorStore(VectorStore):
             points.append(
                 PointStruct(
                     id=paper.id,
-                    vector=vector.tolist(),
+                    vector=vector.flatten().tolist(),
                     payload={
                         "title": paper.title,
                         "authors": paper.authors,
@@ -70,9 +64,7 @@ class QdrantVectorStore(VectorStore):
             )
         self.client.upsert(collection_name=COLLECTION_NAME, points=points)
 
-    def search(
-        self, query_vector: NDArray[np.float32], top_k: int = 5
-    ) -> list[SearchResult]:
+    def search(self, query_vector: NDArray[np.float32], top_k: int = 5) -> list[SearchResult]:
         results: list[ScoredPoint] = self.client.search(
             collection_name=COLLECTION_NAME,
             query_vector=query_vector[0].tolist(),
@@ -80,11 +72,11 @@ class QdrantVectorStore(VectorStore):
         )
         return [
             SearchResult(
-                id=point.id,
-                title=point.payload.get("title", ""),
-                authors=point.payload.get("authors", []),
+                id=str(point.id),
+                title=(point.payload or {}).get("title", ""),
+                authors=(point.payload or {}).get("authors", []),
                 score=point.score,
-                related_ids=point.payload.get("related_ids", []),
+                related_ids=(point.payload or {}).get("related_ids", []),
             )
             for point in results
         ]

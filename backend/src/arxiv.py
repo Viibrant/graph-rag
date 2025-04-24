@@ -32,7 +32,7 @@ def get_text(node: ET.Element | None, required: bool = False) -> str:
 
 
 def fetch_papers(query: str, max_results: int = 5) -> list[Paper]:
-    url = "http://export.arxiv.org/api/query"
+    api_url = "http://export.arxiv.org/api/query"
     params: dict[str, Any] = {
         "search_query": f"all:{query}",
         "start": 0,
@@ -40,7 +40,7 @@ def fetch_papers(query: str, max_results: int = 5) -> list[Paper]:
     }
 
     # Get data from arXiv API
-    response = requests.get(url, params=params)
+    response = requests.get(api_url, params=params, timeout=10)
     response.raise_for_status()
     logger.debug(f"Response status code: {response.status_code}")
 
