@@ -51,7 +51,8 @@ def fetch_papers(query: str, max_results: int = 5) -> list[Paper]:
     # Construct Paper objects per XML entry
     for entry in root.findall("atom:entry", NAMESPACE):
         # Extract paper details
-        paper_id: str = get_text(entry.find("atom:id", NAMESPACE), required=True)
+        url: str = get_text(entry.find("atom:id", NAMESPACE), required=True)
+        paper_id: str = url.partition("/abs/")[-1]
         title: str = get_text(entry.find("atom:title", NAMESPACE), required=True)
         abstract: str = get_text(entry.find("atom:summary", NAMESPACE), required=True)
         authors: list[str] = [
@@ -59,9 +60,7 @@ def fetch_papers(query: str, max_results: int = 5) -> list[Paper]:
             for author in entry.findall("atom:author", NAMESPACE)
         ]
 
-        logger.debug(f"Paper ID: {paper_id}")
-        papers.append(
-            Paper(id=paper_id, title=title, abstract=abstract, authors=authors)
-        )
+        logger.debug(f"Paper ID: {url}")
+        papers.append(Paper(id=paper_id, url=url, title=title, abstract=abstract, authors=authors))
 
     return papers
