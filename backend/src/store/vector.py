@@ -1,6 +1,7 @@
 import os
 from typing import Callable, Protocol
 
+from loguru import logger
 import numpy as np
 from dotenv import load_dotenv
 from numpy.typing import NDArray
@@ -29,6 +30,7 @@ class VectorStore(Protocol):
 class QdrantVectorStore(VectorStore):
     def __init__(self, host: str = host, port: int = port):
         self.client = QdrantClient(host=host, port=port)
+        self.is_healthy()
 
     def ensure_collection(self) -> None:
         """
@@ -37,11 +39,18 @@ class QdrantVectorStore(VectorStore):
         existing_collections: list[str] = [
             collection.name for collection in self.client.get_collections().collections
         ]
+        logger.info(
+            f"Existing Qdrant collections: {[c.name for c in self.client.get_collections().collections]}"
+        )
         if COLLECTION_NAME not in existing_collections:
+            logger.info(f"Collection '{COLLECTION_NAME}' not found. Creating new collection...")
             self.client.recreate_collection(
                 collection_name=COLLECTION_NAME,
                 vectors_config=VectorParams(size=VECTOR_DIM, distance=Distance.COSINE),
             )
+            logger.success(f"Collection '{COLLECTION_NAME}' created successfully.")
+        else:
+            logger.debug(f"Collection '{COLLECTION_NAME}' already exists.")
 
     def index(self, papers: list[Paper], vectors: NDArray[np.float32]) -> None:
         """
@@ -62,7 +71,11 @@ class QdrantVectorStore(VectorStore):
                     },
                 )
             )
+        logger.info(f"Indexing {len(papers)} papers into Qdrant...")
         self.client.upsert(collection_name=COLLECTION_NAME, points=points)
+        logger.success(f"Successfully upserted {len(points)} points into '{COLLECTION_NAME}'")
+        count = self.client.count(COLLECTION_NAME, exact=True).count
+        logger.debug(f"Collection now contains {count} vectors")
 
     def search(self, query_vector: NDArray[np.float32], top_k: int = 5) -> list[SearchResult]:
         results: list[ScoredPoint] = self.client.search(
@@ -70,6 +83,7 @@ class QdrantVectorStore(VectorStore):
             query_vector=query_vector[0].tolist(),
             limit=top_k,
         )
+        logger.info(f"Searching Qdrant for top {top_k} matches...")
         return [
             SearchResult(
                 id=str(point.id),
@@ -80,6 +94,18 @@ class QdrantVectorStore(VectorStore):
             )
             for point in results
         ]
+
+    def is_healthy(self) -> bool:
+        """
+        Check if the Qdrant instance is healthy.
+        """
+        try:
+            self.client.get_collections()
+            logger.info("Qdrant is healthy.")
+            return True
+        except Exception as e:
+            logger.error(f"Qdrant is not healthy: {e}")
+            return False
 
 
 VECTOR_STORE: dict[str, Callable[[], VectorStore]] = {
