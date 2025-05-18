@@ -37,19 +37,21 @@ class PaperIndex:
         """Set the state of a paper."""
         now = paper_state.last_seen or datetime.now()
         with self.Session() as session:
-            obj = session.get(Paper, paper_state.id)
-            if obj is None:
-                obj = Paper(
+            paper_instance = session.get(Paper, paper_state.id)
+            # Create a new Paper instance if it doesn't exist
+            if paper_instance is None:
+                paper_instance = Paper(
                     id=paper_state.id,
                     status=paper_state.status,
                     in_graph=paper_state.in_graph,
                     last_seen=now,
                 )
-                session.add(obj)
+                session.add(paper_instance)
+            # Otherwise, update the existing one
             else:
-                obj.status = paper_state.status  # type: ignore
-                obj.in_graph = paper_state.in_graph  # type: ignore
-                obj.last_seen = now  # type: ignore
+                paper_instance.status = paper_state.status  # type: ignore
+                paper_instance.in_graph = paper_state.in_graph  # type: ignore
+                paper_instance.last_seen = now  # type: ignore
 
             # Use an upsert for PaperHistory to avoid UNIQUE constraint violations
             stmt = (
