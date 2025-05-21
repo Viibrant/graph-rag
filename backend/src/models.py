@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import Enum
 from typing import Any
 
@@ -67,13 +68,21 @@ class PaperStatus(str, Enum):
 
 
 class PaperState(BaseModel):
+    """
+    Represents the state of a paper in the ingestion pipeline.
+    """
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        coerce_numbers_to_str=True,
+    )
     id: str
     status: PaperStatus
     in_graph: bool = Field(
         default=False,
         description="Whether the paper is in the graph",
     )
-    last_seen: str | None = Field(
+    last_seen: datetime | None = Field(
         default=None,
         description="Timestamp of the last time the paper was seen",
     )
