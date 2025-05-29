@@ -1,10 +1,8 @@
-import os
 import uuid
 from datetime import datetime
 from pathlib import Path
 
 import pytest
-import requests
 
 from src.models import PaperState, PaperStatus
 from src.store.index import PaperIndex
