@@ -94,3 +94,18 @@ class PaperIndex:
                 session.add(PaperHistory(id=s.id, state=s.status))
 
             session.commit()
+
+    def is_healthy(self) -> bool:
+        """Perform a health check on the paper index."""
+        try:
+            with self.Session() as session:
+                # Check if we can query the Paper table
+                session.query(Paper).first()
+            return True
+        except Exception as e:
+            print(f"Health check failed: {e}")
+            return False
+
+    def __del__(self):
+        """Close the database connection when the instance is deleted."""
+        self.engine.dispose()
