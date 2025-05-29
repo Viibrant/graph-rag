@@ -11,6 +11,7 @@ dependencies = [
     "fastapi>=0.115.11",
     "loguru>=0.7.3",
     "mcp[cli]>=1.4.1",
+    "modal>=1.0.2",
     "numpy>=2.2.4",
     "poethepoet>=0.33.1",
     "psycopg2>=2.9.10",
@@ -43,6 +44,7 @@ dev = [
 [tool.poe.tasks]
 pipeline = "python src/"
 server = "uvicorn src.server:app"
+worker = "python scripts/modal_app.py"
 test = "pytest"
 format = "ruff format"
 typecheck = "mypy --strict --ignore-missing-imports src/"
@@ -61,3 +63,6 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+
+[tool.hatch.metadata]
+allow-optional-dependencies = true
