@@ -2,7 +2,8 @@ from datetime import datetime
 from pathlib import Path
 
 from sqlalchemy import create_engine
-from sqlalchemy.dialects.sqlite import insert
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.orm import sessionmaker
 
 from src.config import PAPER_INDEX_PATH
@@ -19,9 +20,9 @@ class PaperIndex:
                 pool_pre_ping=True,
                 pool_recycle=1800,  # recycle stale connections every 30 min
             )
-
         else:
             self.engine = create_engine(f"sqlite:///{db_path}", future=True)
+        # Create the tables if they don't exist
         Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine, future=True)
 
@@ -55,13 +56,15 @@ class PaperIndex:
 
             # Use an upsert for PaperHistory to avoid UNIQUE constraint violations
             stmt = (
-                insert(PaperHistory)
-                .values(
-                    id=paper_state.id,
-                    state=paper_state.status,
-                )
+                (
+                    pg_insert
+                    if self.engine.url.get_backend_name() == "postgresql"
+                    else sqlite_insert
+                )(PaperHistory)
+                .values(id=paper_state.id, state=paper_state.status)
                 .on_conflict_do_nothing(index_elements=["id"])
             )
+
             session.execute(stmt)
             session.commit()
 
