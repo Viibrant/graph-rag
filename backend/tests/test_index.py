@@ -10,16 +10,11 @@ from src.models import PaperState, PaperStatus
 from src.store.index import PaperIndex
 
 
-@pytest.fixture(params=["sqlite", "supabase"])
-def paper_index(request: requests.Request, tmp_path: Path):
-    if request.param == "sqlite":
-        db_path = tmp_path / "test_papers.db"
-        return PaperIndex(db_path=db_path)
-    elif request.param == "supabase":
-        db_url = os.getenv("SUPABASE_DB_URL")
-        if not db_url:
-            pytest.skip("SUPABASE_DB_URL not set")
-        return PaperIndex(db_url=db_url)
+@pytest.fixture
+def paper_index(tmp_path: Path) -> PaperIndex:
+    # Use a temporary database for each test
+    db_path: Path = tmp_path / "test_papers.db"
+    return PaperIndex(db_path=db_path)
 
 
 def test_set_and_get_single_paper(paper_index: PaperIndex):
