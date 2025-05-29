@@ -18,19 +18,3 @@ def search(query: str, expand_hops: int = 1) -> list[SearchResult]:
 
     enriched = graph.get_papers_by_ids(list(all_ids))
     return enriched
-
-
-def health_check() -> bool:
-    """
-    Check the health of the vector store and graph store.
-    """
-    vector_store = get_vector_store()
-    graph_store = get_graph_store()
-
-    # Check if the vector store is healthy
-    vector_healthy = vector_store.is_healthy()
-
-    # Check if the graph store is healthy
-    graph_healthy = graph_store.is_healthy()
-
-    return vector_healthy and graph_healthy

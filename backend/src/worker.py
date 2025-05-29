@@ -114,5 +114,17 @@ def run_worker_loop() -> None:
         logger.info(f"Batch processed in {duration:.2f} seconds")
 
 
+def run_worker_once() -> int:
+    """
+    Run a single batch of the worker. Returns number of papers processed.
+    """
+    redis_conn: Redis = get_redis_conn()
+    papers = get_batch(redis_conn, BATCH_SIZE)
+    process_batch(papers)
+    return len(papers)
+
+
 if __name__ == "__main__":
-    run_worker_loop()
+    processed = run_worker_once()
+    if processed == 0:
+        logger.info("No papers in queue — exiting.")
