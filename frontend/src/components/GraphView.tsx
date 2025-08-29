@@ -1,15 +1,15 @@
 import React, { useCallback, useMemo } from 'react'
 import ReactFlow, {
-  Node,
-  Edge,
   addEdge,
-  Connection,
-  useNodesState,
-  useEdgesState,
-  Controls,
   Background,
   BackgroundVariant,
+  Connection,
+  Controls,
+  Edge,
+  Node,
   NodeTypes,
+  useEdgesState,
+  useNodesState,
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 import { GraphData, SearchResult } from '../types'
@@ -26,11 +26,11 @@ const nodeTypes: NodeTypes = {
   paper: PaperNode,
 }
 
-export default function GraphView({ 
-  graphData, 
-  searchResults, 
-  selectedPaper, 
-  onPaperSelect 
+export default function GraphView({
+  graphData,
+  searchResults,
+  selectedPaper,
+  onPaperSelect
 }: GraphViewProps) {
   const { nodes: initialNodes, edges: initialEdges } = useMemo(() => {
     if (!graphData) {

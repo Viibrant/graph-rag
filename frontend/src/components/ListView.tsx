@@ -1,5 +1,4 @@
-import React from 'react'
-import { Users, ExternalLink, Star, Network } from 'lucide-react'
+import { ExternalLink, Network, Star, Users } from 'lucide-react'
 import { SearchResult } from '../types'
 
 interface ListViewProps {
@@ -42,17 +41,17 @@ export default function ListView({ results, selectedPaper, onPaperSelect }: List
                   <Star className="w-4 h-4 text-yellow-500 flex-shrink-0" />
                 )}
               </div>
-              
+
               <div className="flex items-center text-secondary-600 mb-3">
                 <Users className="w-4 h-4 mr-2 flex-shrink-0" />
                 <span className="text-sm">
-                  {paper.authors.length > 3 
+                  {paper.authors.length > 3
                     ? `${paper.authors.slice(0, 3).join(', ')} +${paper.authors.length - 3} more`
                     : paper.authors.join(', ')
                   }
                 </span>
               </div>
-              
+
               <div className="flex items-center space-x-4 text-sm text-secondary-500">
                 {paper.score && (
                   <span className="flex items-center">
@@ -60,7 +59,7 @@ export default function ListView({ results, selectedPaper, onPaperSelect }: List
                     <span className="ml-1">{paper.score.toFixed(3)}</span>
                   </span>
                 )}
-                
+
                 {paper.related_ids && paper.related_ids.length > 0 && (
                   <span className="flex items-center">
                     <Network className="w-3 h-3 mr-1" />
@@ -69,7 +68,7 @@ export default function ListView({ results, selectedPaper, onPaperSelect }: List
                 )}
               </div>
             </div>
-            
+
             <div className="ml-4 flex-shrink-0">
               <button
                 onClick={(e) => {
@@ -83,7 +82,7 @@ export default function ListView({ results, selectedPaper, onPaperSelect }: List
               </button>
             </div>
           </div>
-          
+
           {paper.related_ids && paper.related_ids.length > 0 && selectedPaper === paper.id && (
             <div className="mt-4 pt-4 border-t border-secondary-200">
               <h4 className="text-sm font-medium text-secondary-700 mb-2">Related Papers:</h4>

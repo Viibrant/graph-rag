@@ -1,4 +1,4 @@
-import { SearchResult, GraphData, PaperStatus } from '../types'
+import { GraphData, PaperStatus, SearchResult } from '../../types'
 
 const API_BASE = '/api'
 
