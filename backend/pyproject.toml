@@ -44,7 +44,7 @@ dev = [
 [tool.poe.tasks]
 pipeline = "python src/"
 server = "uvicorn src.server:app"
-worker = "python scripts/modal_app.py"
+worker = "python scripts/modal_worker.py"
 test = "pytest"
 format = "ruff format"
 typecheck = "mypy --strict --ignore-missing-imports src/"
