@@ -4,28 +4,22 @@ WORKDIR /app
 # Cache deps (but not project code)
 COPY backend/pyproject.toml backend/uv.lock* ./
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-install-project
+    uv sync --frozen --no-venv --no-install-project
 
 # Final stage for CPU dev
 FROM base AS cpu
 WORKDIR /app
-# Copy your code (but in dev we’ll override with a volume mount)
 COPY backend/ /app/
-RUN uv sync --frozen
+RUN uv sync --frozen --no-venv
 
 ENV PYTHONUNBUFFERED=1
 CMD ["uv", "run", "poe", "server"]
 
 # Optional GPU stage
-FROM base AS gpu
-WORKDIR /app
-COPY backend/ /app/
-
-# Install GPU deps (torch+cuda, etc.)
+FROM cpu AS gpu
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip install --system torch --index-url https://download.pytorch.org/whl/cu121
-
-RUN uv sync --frozen
+    uv pip install --system --force-reinstall torch \
+    --index-url https://download.pytorch.org/whl/cu121
 
 ENV PYTHONUNBUFFERED=1
 CMD ["uv", "run", "poe", "server"]
