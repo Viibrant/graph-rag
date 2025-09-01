@@ -1,4 +1,3 @@
-// frontend/src/components/GraphView.tsx
 import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation } from "d3-force";
 import { useCallback, useEffect, useMemo } from "react";
 import ReactFlow, {
@@ -16,10 +15,11 @@ import ReactFlow, {
   useReactFlow,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import type { GraphData, SearchResult } from "../types";
-import PaperNode from "./PaperNode";
+import type { GraphData, SearchResult, SimLink, SimNode } from "../types";
+import PaperNode, { type PaperNodeData } from "./PaperNode";
 
 const NODE_TYPES: NodeTypes = Object.freeze({ paper: PaperNode });
+
 
 interface GraphViewProps {
   graphData?: GraphData;
@@ -37,8 +37,8 @@ const sizeFromCentrality = (c?: number) => {
   return Math.max(10, Math.min(28, d));   // cap 28 (was 34)
 };
 
-function synthFromResults(results: SearchResult[]): { nodes: Node[]; edges: Edge[] } {
-  const nodes = new Map<string, Node>();
+function synthFromResults(results: SearchResult[]): { nodes: Node<PaperNodeData>[]; edges: Edge[] } {
+  const nodes = new Map<string, Node<PaperNodeData>>();
   const edges: Edge[] = [];
   for (const r of results) {
     nodes.set(r.id, {
@@ -80,18 +80,27 @@ function synthFromResults(results: SearchResult[]): { nodes: Node[]; edges: Edge
   return { nodes: Array.from(nodes.values()), edges };
 }
 
-function forceLayout(nodes: Node[], edges: Edge[]) {
-  const diam = new Map(nodes.map((n) => [n.id, (n.data as any).size ?? 16]));
-  const simNodes = nodes.map((n) => ({ id: n.id, x: Math.random() * 800, y: Math.random() * 500 }));
+function forceLayout(nodes: Node<PaperNodeData>[], edges: Edge[]) {
+  const diam = new Map(nodes.map((n) => [n.id, n.data.size ?? 16]));
+  const simNodes: SimNode[] = nodes.map((n) => ({
+    id: n.id,
+    x: Math.random() * 800,
+    y: Math.random() * 500,
+  }));
   const idx = new Map(simNodes.map((n) => [n.id, n]));
-  const links = edges
+
+  const links: SimLink[] = edges
     .filter((e) => idx.has(e.source) && idx.has(e.target))
-    .map((e) => ({ source: idx.get(e.source)!, target: idx.get(e.target)!, distance: 110 }));
+    .map((e) => ({
+      source: idx.get(e.source)!,
+      target: idx.get(e.target)!,
+      distance: 110,
+    }));
 
   const sim = forceSimulation(simNodes)
     .force("charge", forceManyBody().strength(-160))
-    .force("link", forceLink(links).distance((d: any) => d.distance).strength(0.25))
-    .force("collide", forceCollide((d: any) => (diam.get(d.id) ?? 16) / 2 + 6))
+    .force("link", forceLink<SimNode, SimLink>(links).distance((d) => d.distance).strength(0.25))
+    .force("collide", forceCollide<SimNode>((d) => (diam.get(d.id) ?? 16) / 2 + 6))
     .force("center", forceCenter(400, 240))
     .stop();
 
@@ -99,10 +108,12 @@ function forceLayout(nodes: Node[], edges: Edge[]) {
 
   const laid = nodes.map((n) => {
     const s = idx.get(n.id)!;
-    return { ...n, position: { x: s.x ?? 0, y: s.y ?? 0 } };
+    return { ...n, position: { x: s.x, y: s.y } };
   });
+
   return { nodes: laid, edges };
 }
+
 
 function GraphViewInner({ graphData, searchResults, selectedPaper, onPaperSelect, height = "62vh" }: GraphViewProps) {
   const { fitView } = useReactFlow();
@@ -140,7 +151,7 @@ function GraphViewInner({ graphData, searchResults, selectedPaper, onPaperSelect
       const synth = synthFromResults(searchResults);
       baseNodes = synth.nodes.map((n) => ({
         ...n,
-        data: { ...(n.data as any), onSelect: () => onPaperSelect(n.id), isSelected: false },
+        data: { ...n.data, onSelect: () => onPaperSelect(n.id), isSelected: false }
       }));
       baseEdges = synth.edges;
     }
@@ -157,7 +168,12 @@ function GraphViewInner({ graphData, searchResults, selectedPaper, onPaperSelect
     }
     return layoutNodes.map((n) => ({
       ...n,
-      data: { ...(n.data as any), isSelected: n.id === selectedPaper, isFaded: !neigh.has(n.id), showLabel: n.id === selectedPaper },
+      data: {
+        ...n.data,
+        isSelected: n.id === selectedPaper,
+        isFaded: !neigh.has(n.id),
+        showLabel: n.id === selectedPaper,
+      }
     }));
   }, [layoutNodes, layoutEdges, selectedPaper]);
 

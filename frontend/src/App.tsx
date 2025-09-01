@@ -25,7 +25,11 @@ export default function App() {
       setGraphData(data.graph ?? { nodes: [], edges: [] });
       setSelectedPaper(data.results?.[0]?.id ?? null);
     } catch (err) {
-      if ((err as any)?.name !== "AbortError") console.error(err);
+      if (err instanceof DOMException && err.name === "AbortError") {
+        console.log("Search aborted");
+      } else {
+        console.error("Search error:", err);
+      }
     } finally {
       if (abortRef.current === ctrl) abortRef.current = null;
       setIsLoading(false);

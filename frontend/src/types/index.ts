@@ -30,3 +30,15 @@ export interface PaperStatus {
   status: 'queued' | 'embedded' | 'seen' | 'error'
   in_graph: boolean
 }
+
+export interface SimNode {
+  id: string;
+  x: number;
+  y: number;
+}
+
+export interface SimLink {
+  source: SimNode;
+  target: SimNode;
+  distance: number;
+}

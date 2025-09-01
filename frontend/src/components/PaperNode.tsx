@@ -1,8 +1,7 @@
-// frontend/src/components/PaperNode.tsx
 import { memo } from "react";
 import { Handle, Position } from "reactflow";
 
-interface PaperNodeData {
+export interface PaperNodeData {
   title: string;
   size: number;
   isSearchResult: boolean;
