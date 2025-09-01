@@ -1,6 +1,14 @@
-from fastapi import APIRouter, HTTPException, Query
+import random
 
-from src.models import IngestEvent, PaperState
+from fastapi import APIRouter, HTTPException, Query
+from loguru import logger
+
+from src.factories import SearchResponseFactory
+from src.models import (
+    IngestEvent,
+    PaperState,
+    SearchResponse,
+)
 from src.pipeline import run_pipeline
 from src.store import get_paper_index, health_check
 
@@ -45,3 +53,13 @@ def status(paper_id: list[str] = Query(...)) -> list[dict[str, str | bool]]:
             )
 
     return results
+
+
+@router.get("/search", response_model=SearchResponse)
+def search(query: str = Query(..., min_length=1)):
+    # TODO: Replace this mock logic with real vector search + graph logic
+    logger.debug(f"Received search query: {query}")
+    num_results = random.randint(1, 10)
+    num_nodes = random.randint(5, 15)
+    logger.debug(f"Returning {num_results} results and {num_nodes} graph nodes")
+    return SearchResponseFactory(num_results=num_results, num_nodes=num_nodes)
