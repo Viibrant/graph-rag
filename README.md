@@ -2,6 +2,44 @@
 
 A modular AI pipeline that fetches research papers from ArXiv, tracks their ingestion state, and queues them for embedding and indexing into Qdrant. Designed for scalable semantic + graph-augmented search (Graph-RAG).
 
+## Features
+
+- 📄 Fetch papers from ArXiv API
+- 🧠 Queue papers for embedding (deferred, async)
+- 🧮 Track paper ingestion state in SQLite index
+- 📦 Index embeddings into Qdrant
+- 🔍 Search Qdrant with fastembed support
+- 🧩 Merge vector + (planned) graph hits
+- ✅ Type-safe, testable, modular pipeline
+- ⚙️ Health checks, typed interfaces, and task runner setup
+
+## Usage
+
+### Local dev (CPU by default)
+
+```bash
+make up-full        # Run full stack with CPU
+make up-full USE_GPU=1  # Run with GPU (requires NVIDIA runtime)
+```
+
+Services:
+
+- **API** → [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Qdrant UI** → [http://localhost:6333/dashboard](http://localhost:6333/dashboard)
+- **Redis** → localhost:6379 (use `redis-cli`)
+
+### Direct tasks (no Docker)
+
+```bash
+poe server     # Run the FastAPI backend
+poe pipeline   # Run the end-to-end pipeline (logs steps)
+poe test       # Run the tests
+```
+
+## Diagram
+
+<details>
+<summary>System architecture diagram</summary>
 
 ```mermaid
 flowchart TD
@@ -20,7 +58,7 @@ flowchart TD
     end
 
     subgraph Vector Store
-        V1["Qdrant (hosted)"]
+        V1["Qdrant (hosted/local)"]
     end
 
     subgraph Embedding Worker
