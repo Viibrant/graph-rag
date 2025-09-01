@@ -1,0 +1,49 @@
+name: graph-rag-local
+
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports: ["6333:6333", "6334:6334"]
+    volumes:
+      - ./qdrant/data:/qdrant/storage
+    profiles: ["core"]
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    profiles: ["redis-local"]
+
+  api:
+    build:
+      context: ..
+      dockerfile: ./backend/Dockerfile
+      target: cpu   # Use the cpu stage
+    working_dir: /app
+    volumes:
+      - ../backend:/app
+    env_file:
+      - ./qdrant/.env
+      - ./app/.env
+    depends_on:
+      qdrant:
+        condition: service_started
+    command: ["uv", "run", "poe", "server"]
+    ports: ["8000:8000"]
+    profiles: ["app"]
+
+  worker:
+    build:
+      context: ..
+      dockerfile: ./backend/Dockerfile
+      target: cpu   # Use the cpu
+    working_dir: /app
+    volumes:
+      - ../backend:/app
+    env_file:
+      - ./qdrant/.env
+      - ./app/.env
+    depends_on:
+      qdrant:
+        condition: service_started
+    command: ["uv", "run", "--", "python", "-c", "from src.worker import run_worker_loop; run_worker_loop()"]
+    profiles: ["worker"]
