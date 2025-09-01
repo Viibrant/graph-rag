@@ -175,3 +175,10 @@ cython_debug/
 
 # Pylance typing stubs
 *.pyi
+
+# Data directory
+.data
+
+# Qdrant runtime files
+aliases/data.json
+raft_state.json
