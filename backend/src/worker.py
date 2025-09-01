@@ -20,32 +20,24 @@ BATCH_SIZE = 8
 SLEEP_INTERVAL = 1.0  # seconds
 
 
-def get_batch(redis_conn: Redis, max_items: int) -> list[Paper]:
+def get_batch(redis_conn: Redis, max_items: int, timeout: int = 5) -> list[Paper]:
     """
-    Fetch a batch of papers from Redis.
-
-    Args:
-        redis_conn (Redis): Redis connection object.
-        max_items (int): Maximum number of items to fetch.
-
-    Returns:
-        list[Paper]: List of Paper objects.
+    Fetch up to max_items papers from Redis using blocking pop.
+    Waits up to `timeout` seconds for each item before giving up.
     """
-    logger.info("Fetching batch from Redis...")
     batch: list[Paper] = []
-
-    # Fetch papers from Redis queue, validate them, and add to batch
     for _ in range(max_items):
-        raw = redis_conn.lpop("paper_queue")
+        logger.debug("Waiting for paper in queue...")
+        raw = redis_conn.blpop("paper_queue", timeout=timeout)
         if raw is None:
-            break
+            break  # no new item in `timeout` seconds
         try:
-            paper = Paper.model_validate_json(raw)
+            _, value = raw  # (queue name, payload)
+            paper = Paper.model_validate_json(value)
             batch.append(paper)
+            logger.debug(f"Fetched paper {paper.id} from queue")
         except Exception as e:
             logger.warning(f"Invalid paper format: {e}")
-            continue
-
     return batch
 
 
@@ -98,16 +90,20 @@ def run_worker_loop() -> None:
     logger.info("Starting worker loop...")
     redis_conn: Redis = get_redis_conn()
 
+    backoff = SLEEP_INTERVAL
+
     while True:
         start_time = time()
 
         papers = get_batch(redis_conn, BATCH_SIZE)
 
-        # Sleep if no papers were fetched
         if not papers:
-            sleep(SLEEP_INTERVAL)
+            logger.debug(f"No papers found, sleeping for {backoff:.1f}s...")
+            sleep(backoff)
+            backoff = min(backoff * 2, 60.0)  # Cap at 1 min
             continue
 
+        backoff = SLEEP_INTERVAL  # reset backoff
         process_batch(papers)
 
         duration = time() - start_time
