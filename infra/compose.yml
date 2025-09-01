@@ -47,3 +47,15 @@ services:
         condition: service_started
     command: ["uv", "run", "--", "python", "-c", "from src.worker import run_worker_loop; run_worker_loop()"]
     profiles: ["worker"]
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: ./frontend/Dockerfile
+    working_dir: /app
+    volumes:
+      - ../frontend:/app
+    ports:
+      - "5173:5173" # Vite dev server (Bun runs it fine)
+    command: ["bun", "run", "dev"]
+    profiles: ["frontend"]

@@ -18,9 +18,9 @@ up-worker: ; $(compose) --profile core --profile worker up -d
 # Full stack: switch between CPU/GPU depending on USE_GPU
 up-full:
 ifeq ($(USE_GPU),1)
-	$(gpu_compose) --profile core --profile redis-local --profile app --profile worker up -d
+	$(gpu_compose) --profile core --profile redis-local --profile app --profile worker --profile frontend up -d 
 else
-	$(compose) --profile core --profile redis-local --profile app --profile worker up -d
+	$(compose) --profile core --profile redis-local --profile app --profile worker --profile frontend up -d
 endif
 
 # One-off worker run
