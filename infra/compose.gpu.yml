@@ -1,0 +1,40 @@
+name: graph-rag-local
+
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports: ["6333:6333", "6334:6334"]
+    volumes:
+      - ./qdrant/data:/qdrant/storage
+    profiles: ["core"]
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    profiles: ["redis-local"]
+
+  api:
+    build:
+      context: ..
+      dockerfile: ./backend/Dockerfile
+      target: gpu
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    runtime: nvidia
+    profiles: ["app"]
+
+  worker:
+    build:
+      context: ..
+      dockerfile: ./backend/Dockerfile
+      target: gpu
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    runtime: nvidia
+    profiles: ["worker"]
