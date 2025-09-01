@@ -46,7 +46,7 @@ dev = [
 
 [tool.poe.tasks]
 pipeline = "python src/"
-server = "uvicorn src.server:app"
+server = "uvicorn src.server:app --host 0.0.0.0 --port 8000 --reload"
 worker = "python scripts/modal_worker.py"
 test = "pytest"
 format = "ruff format"
