@@ -1,123 +1,228 @@
-import React, { useCallback, useMemo } from 'react'
+// frontend/src/components/GraphView.tsx
+import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation } from "d3-force";
+import { useCallback, useEffect, useMemo } from "react";
 import ReactFlow, {
   addEdge,
   Background,
   BackgroundVariant,
-  Connection,
+  type Connection,
   Controls,
-  Edge,
-  Node,
-  NodeTypes,
+  type Edge,
+  type Node,
+  type NodeTypes,
+  ReactFlowProvider,
   useEdgesState,
   useNodesState,
-} from 'reactflow'
-import 'reactflow/dist/style.css'
-import { GraphData, SearchResult } from '../types'
-import PaperNode from './PaperNode'
+  useReactFlow,
+} from "reactflow";
+import "reactflow/dist/style.css";
+import type { GraphData, SearchResult } from "../types";
+import PaperNode from "./PaperNode";
+
+const NODE_TYPES: NodeTypes = Object.freeze({ paper: PaperNode });
 
 interface GraphViewProps {
-  graphData?: GraphData
-  searchResults: SearchResult[]
-  selectedPaper: string | null
-  onPaperSelect: (paperId: string) => void
+  graphData?: GraphData;
+  searchResults: SearchResult[];
+  selectedPaper: string | null;
+  onPaperSelect: (paperId: string) => void;
+  /** CSS height, e.g. "58vh" (default "62vh") */
+  height?: string;
 }
 
-const nodeTypes: NodeTypes = {
-  paper: PaperNode,
-}
+// smaller mapping so blobs don’t dominate
+const sizeFromCentrality = (c?: number) => {
+  const x = Math.max(0, c ?? 0);
+  const d = 10 + 16 * Math.sqrt(x);       // was 12 + 20
+  return Math.max(10, Math.min(28, d));   // cap 28 (was 34)
+};
 
-export default function GraphView({
-  graphData,
-  searchResults,
-  selectedPaper,
-  onPaperSelect
-}: GraphViewProps) {
-  const { nodes: initialNodes, edges: initialEdges } = useMemo(() => {
-    if (!graphData) {
-      return { nodes: [], edges: [] }
-    }
-
-    // Create a set of search result IDs for highlighting
-    const searchResultIds = new Set(searchResults.map(r => r.id))
-
-    // Convert graph nodes to ReactFlow nodes
-    const nodes: Node[] = graphData.nodes.map((node, index) => ({
-      id: node.id,
-      type: 'paper',
-      position: {
-        x: Math.cos(index * 0.5) * 200 + 400,
-        y: Math.sin(index * 0.5) * 200 + 300,
-      },
+function synthFromResults(results: SearchResult[]): { nodes: Node[]; edges: Edge[] } {
+  const nodes = new Map<string, Node>();
+  const edges: Edge[] = [];
+  for (const r of results) {
+    nodes.set(r.id, {
+      id: r.id,
+      type: "paper",
+      position: { x: 0, y: 0 },
       data: {
-        title: node.title,
-        authors: node.authors,
-        centrality: node.centrality,
-        isSearchResult: searchResultIds.has(node.id),
-        isSelected: selectedPaper === node.id,
-        onSelect: () => onPaperSelect(node.id),
+        title: r.title,
+        size: sizeFromCentrality(r.score),
+        isSearchResult: true,
+        isSelected: false,
+        isFaded: false,
+        showLabel: false,
+        onSelect: () => { },
       },
-    }))
+    });
+  }
+  for (const r of results) {
+    for (const rel of r.related_ids ?? []) {
+      if (!nodes.has(rel)) {
+        nodes.set(rel, {
+          id: rel,
+          type: "paper",
+          position: { x: 0, y: 0 },
+          data: {
+            title: rel,
+            size: 10,
+            isSearchResult: false,
+            isSelected: false,
+            isFaded: false,
+            showLabel: false,
+            onSelect: () => { },
+          },
+        });
+      }
+      edges.push({ id: `${r.id}-${rel}`, source: r.id, target: rel, style: { strokeWidth: 1.5, stroke: "var(--border)" } });
+    }
+  }
+  return { nodes: Array.from(nodes.values()), edges };
+}
 
-    // Convert graph edges to ReactFlow edges
-    const edges: Edge[] = graphData.edges.map((edge) => ({
-      id: `${edge.source}-${edge.target}`,
-      source: edge.source,
-      target: edge.target,
+function forceLayout(nodes: Node[], edges: Edge[]) {
+  const diam = new Map(nodes.map((n) => [n.id, (n.data as any).size ?? 16]));
+  const simNodes = nodes.map((n) => ({ id: n.id, x: Math.random() * 800, y: Math.random() * 500 }));
+  const idx = new Map(simNodes.map((n) => [n.id, n]));
+  const links = edges
+    .filter((e) => idx.has(e.source) && idx.has(e.target))
+    .map((e) => ({ source: idx.get(e.source)!, target: idx.get(e.target)!, distance: 110 }));
+
+  const sim = forceSimulation(simNodes)
+    .force("charge", forceManyBody().strength(-160))
+    .force("link", forceLink(links).distance((d: any) => d.distance).strength(0.25))
+    .force("collide", forceCollide((d: any) => (diam.get(d.id) ?? 16) / 2 + 6))
+    .force("center", forceCenter(400, 240))
+    .stop();
+
+  for (let i = 0; i < 180; i++) sim.tick();
+
+  const laid = nodes.map((n) => {
+    const s = idx.get(n.id)!;
+    return { ...n, position: { x: s.x ?? 0, y: s.y ?? 0 } };
+  });
+  return { nodes: laid, edges };
+}
+
+function GraphViewInner({ graphData, searchResults, selectedPaper, onPaperSelect, height = "62vh" }: GraphViewProps) {
+  const { fitView } = useReactFlow();
+
+  // base layout (data only)
+  const { nodes: layoutNodes, edges: layoutEdges } = useMemo(() => {
+    let baseNodes: Node[];
+    let baseEdges: Edge[];
+
+    if (graphData && graphData.edges?.length) {
+      const hits = new Set(searchResults.map((r) => r.id));
+      baseNodes = graphData.nodes.map((n) => ({
+        id: n.id,
+        type: "paper",
+        position: { x: 0, y: 0 },
+        data: {
+          title: n.title,
+          size: sizeFromCentrality(n.centrality),
+          isSearchResult: hits.has(n.id),
+          isSelected: false,
+          isFaded: false,
+          showLabel: false,
+          onSelect: () => onPaperSelect(n.id),
+        },
+      }));
+      baseEdges = graphData.edges
+        .filter((e) => e.source !== e.target)
+        .map((e) => ({
+          id: `${e.source}-${e.target}`,
+          source: e.source,
+          target: e.target,
+          style: { strokeWidth: Math.max(1, e.weight * 2), stroke: "var(--border)" },
+        }));
+    } else {
+      const synth = synthFromResults(searchResults);
+      baseNodes = synth.nodes.map((n) => ({
+        ...n,
+        data: { ...(n.data as any), onSelect: () => onPaperSelect(n.id), isSelected: false },
+      }));
+      baseEdges = synth.edges;
+    }
+    return forceLayout(baseNodes, baseEdges);
+  }, [graphData, searchResults, onPaperSelect]);
+
+  // selection-only styling (positions untouched)
+  const styledNodes = useMemo(() => {
+    if (!selectedPaper) return layoutNodes;
+    const neigh = new Set<string>([selectedPaper]);
+    for (const e of layoutEdges) {
+      if (e.source === selectedPaper) neigh.add(String(e.target));
+      if (e.target === selectedPaper) neigh.add(String(e.source));
+    }
+    return layoutNodes.map((n) => ({
+      ...n,
+      data: { ...(n.data as any), isSelected: n.id === selectedPaper, isFaded: !neigh.has(n.id), showLabel: n.id === selectedPaper },
+    }));
+  }, [layoutNodes, layoutEdges, selectedPaper]);
+
+  const styledEdges = useMemo(() => {
+    if (!selectedPaper) return layoutEdges;
+    return layoutEdges.map((e) => ({
+      ...e,
       style: {
-        strokeWidth: Math.max(1, edge.weight * 4),
-        stroke: edge.type === 'co_author' ? '#3b82f6' : '#6b7280',
+        ...(e.style || {}),
+        stroke: e.source === selectedPaper || e.target === selectedPaper ? "var(--accent)" : "var(--border)",
+        strokeWidth: e.source === selectedPaper || e.target === selectedPaper ? 2.5 : 1.5,
       },
-      animated: searchResultIds.has(edge.source) || searchResultIds.has(edge.target),
-    }))
+    }));
+  }, [layoutEdges, selectedPaper]);
 
-    return { nodes, edges }
-  }, [graphData, searchResults, selectedPaper, onPaperSelect])
+  const [nodes, setNodes, onNodesChange] = useNodesState(styledNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(styledEdges);
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
+  const onConnect = useCallback((params: Connection) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
 
-  const onConnect = useCallback(
-    (params: Connection) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges]
-  )
+  useEffect(() => {
+    setNodes(styledNodes);
+    setEdges(styledEdges);
+    if (!selectedPaper) {
+      const id = setTimeout(() => fitView({ padding: 0.1 }), 0);
+      return () => clearTimeout(id);
+    }
+  }, [styledNodes, styledEdges, fitView, selectedPaper, setNodes, setEdges]);
 
-  // Update nodes when props change
-  React.useEffect(() => {
-    setNodes(initialNodes)
-    setEdges(initialEdges)
-  }, [initialNodes, initialEdges, setNodes, setEdges])
-
-  if (!graphData || graphData.nodes.length === 0) {
+  if (!nodes.length) {
     return (
-      <div className="h-96 flex items-center justify-center text-secondary-500">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-secondary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-          </div>
-          <p>No graph data available</p>
-          <p className="text-sm mt-1">Papers will appear here once they're processed</p>
-        </div>
+      <div className="flex items-center justify-center text-[var(--muted)]" style={{ height }}>
+        <div className="text-sm">No graph data — try another query.</div>
       </div>
-    )
+    );
   }
 
   return (
-    <div className="h-96">
+    <div className="w-full h-full">
       <ReactFlow
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        nodeTypes={nodeTypes}
+        nodeTypes={NODE_TYPES}
         fitView
-        attributionPosition="bottom-left"
+        proOptions={{ hideAttribution: true }}
+        defaultEdgeOptions={{ type: "straight" }}
+        minZoom={0.2}
+        maxZoom={1.8}
       >
-        <Controls />
-        <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
+        <Controls position="bottom-left" />
+        <Background variant={BackgroundVariant.Dots} gap={14} size={1} color="var(--grid)" />
       </ReactFlow>
     </div>
-  )
+  );
+}
+
+export default function GraphViewWrapper(props: GraphViewProps) {
+  return (
+    <ReactFlowProvider>
+      <div className="w-full h-full flex-1">
+        <GraphViewInner {...props} />
+      </div>
+    </ReactFlowProvider>
+  );
 }
