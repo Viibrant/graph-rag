@@ -1,0 +1,34 @@
+# fly.toml app configuration file generated for qdrant-graph-rag on 2025-04-10T00:56:55Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'qdrant-graph-rag'
+primary_region = 'lhr'
+
+[build]
+  image = 'qdrant/qdrant'
+
+[env]
+  QDRANT__SERVICE__API_KEY = ''
+
+[[mounts]]
+  source = 'qdrant_data'
+  destination = '/qdrant/storage'
+
+[[services]]
+  protocol = 'tcp'
+  internal_port = 6333
+
+  [[services.ports]]
+    port = 80
+    handlers = ['http']
+
+  [[services.ports]]
+    port = 443
+    handlers = ['tls', 'http']
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
