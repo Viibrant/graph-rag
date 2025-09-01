@@ -1,4 +1,4 @@
-name: graph-rag-local
+name: litgraph-local
 
 services:
   qdrant:

@@ -9,7 +9,7 @@ Deploys a persistent Qdrant instance using Fly.io.
 ```bash
 fly auth login
 cd infra/qdrant-fly
-fly launch --name qdrant-graph-rag --no-deploy
+fly launch --name qdrant-litgraph --no-deploy
 ```
 
 2. **Create Volume**
@@ -26,11 +26,11 @@ fly deploy
 
 ## Usage
 
-- Qdrant runs at: `http://qdrant-graph-rag.fly.dev:80`
+- Qdrant runs at: `http://qdrant-litgraph.fly.dev:80`
 - Example client setup:
 
 ```python
-QdrantClient(host="qdrant-graph-rag.fly.dev", port=80)
+QdrantClient(host="qdrant-litgraph.fly.dev", port=80)
 ```
 
 ## Environment
@@ -38,7 +38,7 @@ QdrantClient(host="qdrant-graph-rag.fly.dev", port=80)
 Add to `.env` in project root:
 
 ```env
-QDRANT_HOST=qdrant-graph-rag.fly.dev
+QDRANT_HOST=qdrant-litgraph.fly.dev
 QDRANT_PORT=80
 ```
 

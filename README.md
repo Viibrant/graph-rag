@@ -1,6 +1,4 @@
-# graph-rag
-
-A modular AI pipeline that fetches research papers from ArXiv, tracks their ingestion state, and queues them for embedding and indexing into Qdrant. Designed for scalable semantic + graph-augmented search (Graph-RAG).
+# Litgraph
 
 ## Features
 

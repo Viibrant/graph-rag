@@ -45,7 +45,7 @@ export default function App() {
       <div className="mx-auto max-w-7xl p-6 space-y-4">
         <header className="flex items-center justify-between">
           <h1 className="text-3xl font-extrabold tracking-tight">
-            GraphRAG <span className="underline decoration-4 decoration-[var(--accent)]">Search</span>
+            Litgraph <span className="underline decoration-4 decoration-[var(--accent)]">Search</span>
           </h1>
 
           <button
