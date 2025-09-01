@@ -1,5 +1,13 @@
 # Litgraph
 
+Graph-augmented semantic search for academic literature
+
+<p align="center">
+  <img src="docs/screenshot.png" alt="Litgraph screenshot" width="800"/>
+  <br/>
+  <em>Frontend: semantic results + graph view (mock data)</em>
+</p>
+
 ## Features
 
 - 📄 Fetch papers from ArXiv API
@@ -12,6 +20,12 @@
 - ⚙️ Health checks, typed interfaces, and task runner setup
 
 ## Usage
+
+### Requirements
+
+- Python 3.12+
+- Node.js 20+
+- Docker + Docker Compose
 
 ### Local dev (CPU by default)
 
@@ -77,31 +91,18 @@ flowchart TD
 
 </details>
 
+Stack highlights:
 
-## TODO
+- Backend: FastAPI + Pydantic + Poetry (with `poethepoet` task runner)
+- Queue: Redis (Upstash or local)
+- Vector DB: Qdrant
+- Frontend: React + Vite + Tailwind
+- Infra: Docker Compose + Fly.io
 
-- [x] Fetch papers from ArXiv API
-- [x] Parse + normalize metadata (title, abstract, authors, etc.)
-- [x] Implement `PaperIndex` to track ingestion state
-- [x] Add Redis-backed embedding queue
-- [x] Add `enqueue_missing()` to dedupe and defer processing
-- [x] Write unit tests for queuing logic
-- [x] Add semantic search using Qdrant fastembed
-- [x] Modularise pipeline into discovery, semantic, queue
-- [x] Add structured, typed `IngestEvent` system
-- [x] Return semantic search results via `/search`
-- [x] Deploy Qdrant to Fly.io
-- [x] Support `poe` task runner for DX
-- [ ] Implement embedding worker to consume queue and upsert to Qdrant
-- [ ] Track paper status post-embedding in `PaperIndex`
-- [ ] Implement `GraphStore` backend (e.g., NetworkX or Neo4j)
-- [ ] Define and compute paper "relatedness" (authors, topics, citations, etc.)
-- [ ] Add logic to update graph with related nodes
-- [ ] Fuse graph + vector results in `core.search()`
-- [ ] Handle papers with missing metadata gracefully
-- [ ] Add ranking logic to `SearchResult`
-- [ ] Build CLI or frontend for querying + graph viz
-- [ ] Populate Qdrant on startup (bootstrap/init script)
-- [ ] Deploy backend to Fly.io or similar
-- [ ] Snapshot Qdrant or add B2 backup support
-- [ ] Add metrics, health checks, and logging to pipeline
+## Acknowledgements
+
+Thank you to arXiv for use of its open access interoperability.
+
+## License
+
+MIT
