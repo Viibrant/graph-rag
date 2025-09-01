@@ -1,5 +1,8 @@
 name: litgraph-local
 
+volumes:
+  frontend_node_modules:
+
 services:
   qdrant:
     image: qdrant/qdrant:latest
@@ -48,14 +51,33 @@ services:
     command: ["uv", "run", "--", "python", "-c", "from src.worker import run_worker_loop; run_worker_loop()"]
     profiles: ["worker"]
 
-  frontend:
+  # DEV: Vite + HMR
+  frontend-dev:
     build:
       context: ..
       dockerfile: ./frontend/Dockerfile
+      target: dev
     working_dir: /app
     volumes:
       - ../frontend:/app
+      - frontend_node_modules:/app/node_modules
     ports:
-      - "5173:5173" # Vite dev server (Bun runs it fine)
-    command: ["bun", "run", "dev"]
-    profiles: ["frontend"]
+      - "5173:5173"
+    command: ["bun", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
+    depends_on:
+      api:
+        condition: service_started
+    profiles: ["frontend-dev"]
+
+  # PROD: nginx serving built assets
+  frontend-prod:
+    build:
+      context: ..
+      dockerfile: ./frontend/Dockerfile
+      target: prod
+    ports:
+      - "8080:80"
+    depends_on:
+      api:
+        condition: service_started
+    profiles: ["frontend-prod"]
