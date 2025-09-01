@@ -105,3 +105,29 @@ class SearchResult(BaseModel):
         description="List of related paper IDs",
     )
     model_config = ConfigDict(coerce_numbers_to_str=True)
+
+
+class PaperNode(BaseModel):
+    id: str
+    title: str
+    authors: list[str]
+    score: float | None = None  # set for top search hits
+    related_ids: list[str] | None = None
+    centrality: float | None = None  # set for graph metrics
+
+
+class GraphEdge(BaseModel):
+    source: str
+    target: str
+    weight: float
+    type: str
+
+
+class GraphData(BaseModel):
+    nodes: list[PaperNode]
+    edges: list[GraphEdge]
+
+
+class SearchResponse(BaseModel):
+    results: list[PaperNode]  # subset of nodes
+    graph: GraphData
