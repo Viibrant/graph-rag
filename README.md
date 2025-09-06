@@ -1,11 +1,13 @@
 # Litgraph
 
+> 🚧 Under construction
+
 Graph-augmented semantic search for academic literature
 
 <p align="center">
   <img src="docs/screenshot.png" alt="Litgraph screenshot" width="800"/>
   <br/>
-  <em>Frontend: semantic results + graph view (mock data)</em>
+  <em>Current frontend with mock data: semantic results + graph view</em>
 </p>
 
 ## Features
